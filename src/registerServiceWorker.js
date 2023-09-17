@@ -29,7 +29,7 @@ export default function register() {
       return;
     }
 
-    window.addEventListener('load', () => {
+    window.addEventListener('load', () => { 
       const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
       if (isLocalhost) {

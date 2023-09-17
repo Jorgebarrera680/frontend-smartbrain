@@ -13,4 +13,4 @@ const Rank = ({ name, entries }) => {
   );
 }
 
-export default Rank;
+export default Rank; 

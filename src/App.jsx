@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import ParticlesBg from 'particles-bg';
+// import Particles from 'react-particles-js';
+import ParticlesBg from 'particles-bg'
 import FaceRecognition from './components/FaceRecognition/FaceRecognition';
 import Navigation from './components/Navigation/Navigation';
 import Signin from './components/Signin/Signin';
@@ -8,7 +9,6 @@ import Logo from './components/Logo/Logo';
 import ImageLinkForm from './components/ImageLinkForm/ImageLinkForm';
 import Rank from './components/Rank/Rank';
 import './App.css';
-
 
 const initialState = {
   input: '',
@@ -23,17 +23,13 @@ const initialState = {
     entries: 0,
     joined: ''
   }
-};
+}
+
 
 class App extends Component {
   constructor() {
     super();
     this.state = initialState;
-    this.PAT = '';
-    this.USER_ID = 'k9em09b1kw1u';
-    this.APP_ID = 'detect';
-    this.MODEL_ID = 'general-image-recognition';
-    this.MODEL_VERSION_ID = 'aa7f35c01e0642fda5cf400f543e7c40';
   }
 
   loadUser = (data) => {
@@ -44,7 +40,7 @@ class App extends Component {
       entries: data.entries,
       joined: data.joined
     }})
-  };
+  }
 
   calculateFaceLocation = (data) => {
     const clarifaiFace = data.outputs[0].data.regions[0].region_info.bounding_box;
@@ -56,61 +52,47 @@ class App extends Component {
       topRow: clarifaiFace.top_row * height,
       rightCol: width - (clarifaiFace.right_col * width),
       bottomRow: height - (clarifaiFace.bottom_row * height)
-    };
-  };
-
-  displayFaceBox = (box) => {
-    this.setState({box: box});
-  };
-
-  onInputChange = (event) => {
-    this.setState({input: event.target.value});
-  };
-
-  async makeClarifaiRequest(imageUrl) {
-    const raw = JSON.stringify({
-      "user_app_id": {
-        "user_id": this.USER_ID,
-        "app_id": this.APP_ID
-      },
-      "inputs": [
-        {
-          "data": {
-            "image": {
-              "url": imageUrl
-            }
-          }
-        }
-      ]
-    });
-
-    const requestOptions = {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': 'Key ' + this.PAT
-      },
-      body: raw
-    };
-
-    try {
-      const response = await fetch(`https://api.clarifai.com/v2/models/${this.MODEL_ID}/versions/${this.MODEL_VERSION_ID}/outputs`, requestOptions);
-      const result = await response.json();
-      return result; // Return result to be used in further logic
-    } catch (error) {
-      console.log('error', error);
     }
   }
 
-  onButtonSubmit = async () => {
-    this.setState({ imageUrl: this.state.input });
-    const clarifaiResponse = await this.makeClarifaiRequest(this.state.input);
+  displayFaceBox = (box) => {
+    this.setState({box: box});
+  }
 
-    if (clarifaiResponse) {
-      const box = this.calculateFaceLocation(clarifaiResponse);
-      this.displayFaceBox(box);
-    }
-  };
+  onInputChange = (event) => {
+    this.setState({input: event.target.value});
+  }
+
+  onButtonSubmit = () => {
+    this.setState({imageUrl: this.state.input});
+      fetch('https://stormy-retreat-00836-48a858c9ec2f.herokuapp.com/imageurl', {
+        method: 'post',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          input: this.state.input
+        })
+      })
+      .then(response => response.json())
+      .then(response => {
+        if (response) {
+          fetch('https://stormy-retreat-00836.herokuapp.com/image', {
+            method: 'put',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              id: this.state.user.id
+            })
+          })
+            .then(response => response.json())
+            .then(count => {
+              this.setState(Object.assign(this.state.user, { entries: count}))
+            })
+            .catch(console.log)
+
+        }
+        this.displayFaceBox(this.calculateFaceLocation(response))
+      })
+      .catch(err => console.log(err));
+  }
 
   onRouteChange = (route) => {
     if (route === 'signout') {
@@ -119,7 +101,7 @@ class App extends Component {
       this.setState({isSignedIn: true})
     }
     this.setState({route: route});
-  };
+  }
 
   render() {
     const { isSignedIn, imageUrl, route, box } = this.state;
@@ -142,8 +124,8 @@ class App extends Component {
             </div>
           : (
              route === 'signin'
-             ? <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
-             : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+             ? <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
+             : <Register loadUser={this.loadUser} onRouteChange={this.onRouteChange}/>
             )
         }
       </div>
